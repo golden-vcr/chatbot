@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/codingconcepts/env"
+	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot/internal/connection"
 	"github.com/golden-vcr/chatbot/internal/state"
 	"github.com/golden-vcr/chatbot/internal/tokens"
@@ -23,6 +24,8 @@ type Config struct {
 	TwitchClientSecret string `env:"TWITCH_BOT_CLIENT_SECRET" required:"true"`
 
 	TokenStoragePath string `env:"TOKEN_STORAGE_PATH" default:"twitch-tokens"`
+
+	AuthURL string `env:"AUTH_URL" default:"http://localhost:5002"`
 }
 
 func main() {
@@ -37,6 +40,13 @@ func main() {
 	config := Config{}
 	if err := env.Set(&config); err != nil {
 		app.Fail("Failed to load config", err)
+	}
+
+	// We need an auth client in order to authorize HTTP requests that require
+	// admin-level access
+	authClient, err := auth.NewClient(ctx, config.AuthURL)
+	if err != nil {
+		app.Fail("Failed to initialize auth client", err)
 	}
 
 	// Initialize an "agent", which is essentially a wrapper for the IRC bot that
@@ -62,7 +72,7 @@ func main() {
 		}
 		tokenStore := tokens.NewStore(config.TokenStoragePath, config.TwitchBotUsername)
 		connectionServer := connection.NewServer(ctx, app.Log(), agent, client, config.TwitchClientId, redirectUri, config.TwitchBotUsername, tokenStore)
-		connectionServer.RegisterRoutes(r)
+		connectionServer.RegisterRoutes(authClient, r)
 	}
 
 	// Handle incoming HTTP connections until our top-level context is canceled, at

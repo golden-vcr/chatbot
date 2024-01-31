@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/csrf"
 	"github.com/golden-vcr/chatbot/internal/state"
@@ -73,10 +74,17 @@ func NewServer(ctx context.Context, logger *slog.Logger, agent state.Agent, twit
 	}
 }
 
-func (s *Server) RegisterRoutes(r *mux.Router) {
+func (s *Server) RegisterRoutes(c auth.Client, r *mux.Router) {
 	r.Path("/status").Methods("GET").HandlerFunc(s.handleGetStatus)
 	r.Path("/login").Methods("GET").HandlerFunc(s.handleGetLogin)
 	r.Path("/auth").Methods("GET").HandlerFunc(s.handleGetAuth)
+
+	requireBroadcasterAccess := func(next http.Handler) http.Handler {
+		return auth.RequireAccess(c, auth.RoleBroadcaster, next)
+	}
+	logout := r.Path("/logout").Subrouter()
+	logout.Use(requireBroadcasterAccess)
+	logout.Methods("POST").HandlerFunc(s.handlePostLogout)
 }
 
 func (s *Server) handleGetStatus(res http.ResponseWriter, req *http.Request) {
@@ -162,4 +170,17 @@ func (s *Server) handleGetAuth(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Write([]byte(fmt.Sprintf("Successfully initialized chat bot %s.", user.DisplayName)))
+}
+
+func (s *Server) handlePostLogout(res http.ResponseWriter, req *http.Request) {
+	// Disconnect the bot from the IRC server
+	s.agent.Disconnect()
+
+	// Clear any previously-stored tokens for this bot, necessitating a new login
+	if err := s.tokenStore.Clear(); err != nil {
+		http.Error(res, fmt.Sprintf("failed to clear token store: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	res.Write([]byte(fmt.Sprintf("Disconnected chat bot %s and cleared stored tokens.", s.botUsername)))
 }
