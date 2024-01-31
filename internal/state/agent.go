@@ -9,6 +9,7 @@ import (
 
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/irc"
+	"golang.org/x/exp/slog"
 )
 
 type Agent interface {
@@ -17,9 +18,10 @@ type Agent interface {
 	GetStatus() chatbot.Status
 }
 
-func NewAgent(ctx context.Context, channelName, botUsername string) Agent {
+func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string) Agent {
 	return &agent{
 		rootCtx:     ctx,
+		logger:      logger,
 		channelName: channelName,
 		botUsername: botUsername,
 	}
@@ -27,6 +29,7 @@ func NewAgent(ctx context.Context, channelName, botUsername string) Agent {
 
 type agent struct {
 	rootCtx     context.Context
+	logger      *slog.Logger
 	channelName string
 	botUsername string
 
@@ -49,7 +52,9 @@ func (a *agent) Disconnect() {
 func (a *agent) Reinitialize(userAccessToken string, timeout time.Duration) error {
 	a.Disconnect()
 
-	conn, err := irc.NewConn(a.rootCtx, irc.ConnOpts{})
+	conn, err := irc.NewConn(a.rootCtx, irc.ConnOpts{
+		Logger: irc.NewStructuredLogger(a.logger),
+	})
 	if err != nil {
 		return err
 	}

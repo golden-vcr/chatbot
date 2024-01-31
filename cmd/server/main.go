@@ -43,7 +43,7 @@ func main() {
 	// maintains exactly one connection at a time, and which can respond to successful
 	// logins by tearing down any existing connection and then initializing a new one
 	// and reconnecting the bot
-	agent := state.NewAgent(ctx, config.TwitchChannelName, config.TwitchBotUsername)
+	agent := state.NewAgent(ctx, app.Log(), config.TwitchChannelName, config.TwitchBotUsername)
 
 	// Start setting up our HTTP handlers, using gorilla/mux for routing
 	r := mux.NewRouter()

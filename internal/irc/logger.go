@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/exp/slog"
 )
 
 type Logger interface {
@@ -13,12 +15,21 @@ type Logger interface {
 	LogError(err error)
 }
 
-func NewLogger(stream io.Writer) Logger {
+func NewStreamLogger(stream io.Writer) Logger {
 	if stream == nil {
 		stream = os.Stdout
 	}
 	return &streamLogger{
 		w: stream,
+	}
+}
+
+func NewStructuredLogger(logger *slog.Logger) Logger {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &structuredLogger{
+		logger: logger,
 	}
 }
 
@@ -37,6 +48,24 @@ func (l *streamLogger) LogRecv(s string) {
 func (l *streamLogger) LogError(err error) {
 	if err != nil {
 		fmt.Fprintf(l.w, "ERROR: %v\n", err)
+	}
+}
+
+type structuredLogger struct {
+	logger *slog.Logger
+}
+
+func (l *structuredLogger) LogSend(s string) {
+	l.logger.Info("Sending IRC message", "message", redactSend(s))
+}
+
+func (l *structuredLogger) LogRecv(s string) {
+	l.logger.Info("Received IRC message", "message", s)
+}
+
+func (l *structuredLogger) LogError(err error) {
+	if err != nil {
+		l.logger.Error("IRC client error", "error", err)
 	}
 }
 

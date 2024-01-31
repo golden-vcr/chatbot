@@ -48,7 +48,7 @@ func NewConn(ctx context.Context, opts ConnOpts) (Conn, error) {
 		}
 	}
 	if opts.Logger == nil {
-		opts.Logger = NewLogger(os.Stdout)
+		opts.Logger = NewStreamLogger(os.Stdout)
 	}
 
 	// Initiate a TCP connection to the IRC server, giving us a bidirectional stream
