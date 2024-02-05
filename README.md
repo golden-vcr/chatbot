@@ -4,6 +4,8 @@ The **chatbot** service is responsible for maintaining an IRC client connection 
 Golden VCR Twitch channel, serving as a bot that can respond to events and process user
 commands.
 
+- **OpenAPI specification:** https://golden-vcr.github.io/chatbot/
+
 ## Development Guide
 
 On a Linux or WSL system:

@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  version: 0.1.0
+  title: chatbot
+  description: |
+    The **chatbot** service runs an IRC chat bot that connects to the Twitch chat
+    channel for Golden VCR and 
+externalDocs:
+  description: 'github.com/golden-vcr/chatbot'
+  url: https://github.com/golden-vcr/chatbot
+servers:
+  - url: https://goldenvcr.com/api/chatbot
+tags:
+  - name: connection
+    description: |-
+      Admin-only endpoints used to authenticate the bot and connect it to IRC
+  - name: chatlog
+    description: |-
+      Endpoints that expose a real-time log of chat messages occurring in the channel
+paths:
+  /status:
+    get:
+      tags:
+        - connection
+      summary: |-
+        Returns the current status of the chat bot, i.e. whether it's connected to the
+        desired Twitch chat channel
+      operationId: getStatus
+      responses:
+        '200':
+          description: |-
+            Status was successfully retrieved.
+  /login:
+    get:
+      tags:
+        - connection
+      summary: |-
+        Redirects the client to a Twitch login page where they must authenticate as the
+        TapeBoy Twitch account and authorize chat bot app access
+      operationId: getLogin
+      responses:
+        '302':
+          description: |-
+            The client should be redirected to the URL in the `Location` header,
+            initiating an OAuth Authorization Code Grant flow on id.twitch.tv. The
+            `redirect_uri` will send the code to the `/auth` endpoint when finished.
+  /auth:
+    get:
+      tags:
+        - connection
+      summary: |-
+        Completes an OAuth code grant flow and attempts to authenticate as TapeBoy,
+        reestablishing an IRC connection and joining the GoldenVCR channel if OK
+      operationId: getAuth
+      responses:
+        '200':
+          description: |-
+            The chat bot account was successfully authenticated; the service has
+            reinitialized an IRC bot by connecting to Twitch IRC with a user access
+            token and joining the desired channel. User credentials for the bot account
+            will be stored until logout.
+        '401':
+          description: |-
+            The authorization code grant flow was not completed successfully; user
+            identity could not be determined.
+        '403':
+          description: |-
+            Authentication completed successfully but you are not logged in to the
+            designated `TapeBoy` Twitch account.
+  /logout:
+    post:
+      tags:
+        - connection
+      summary: |-
+        Disconnects the bot from IRC and logs it out, clearing any cached user access or
+        refresh tokens
+      security:
+        - twitchUserAccessToken: []
+      description: |-
+        Requires an access token with broadcaster-level access.
+      responses:
+        '200':
+          description: |-
+            The chat bot is no longer connected to IRC (if it ever was) and all
+            previously-stored credentials for that bot have been purged.
+components:
+  securitySchemes:
+    twitchUserAccessToken:
+      type: http
+      scheme: bearer
