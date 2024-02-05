@@ -16,7 +16,7 @@ import (
 type Config struct {
 	BindAddr   string `env:"BIND_ADDR"`
 	ListenPort uint16 `env:"LISTEN_PORT" default:"5006"`
-	PublicUrl  string `env:"PUBLIC_URL" default:"http://localhost:5006"`
+	PublicUrl  string `env:"PUBLIC_URL" default:"https://goldenvcr.com/api/chatbot"`
 
 	TwitchChannelName  string `env:"TWITCH_CHANNEL_NAME" required:"true"`
 	TwitchBotUsername  string `env:"TWITCH_BOT_USERNAME" required:"true"`
