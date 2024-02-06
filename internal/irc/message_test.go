@@ -222,6 +222,62 @@ func Test_parseMessage(t *testing.T) {
 				Body: "Cheer100 Cheer100 ghost of a tiny man wearing a large bowler hat drinking from a penguin shaped glass",
 			},
 		},
+		{
+			"CLEARMSG",
+			"@login=wasabimilkshake;room-id=953753877;target-msg-id=4e569024-f783-4218-9fe2-531d8c4d3556;tmi-sent-ts=1707185570996 :tmi.twitch.tv CLEARMSG #goldenvcr :wasabi test 2\r",
+			"",
+			&Message{
+				Raw: "@login=wasabimilkshake;room-id=953753877;target-msg-id=4e569024-f783-4218-9fe2-531d8c4d3556;tmi-sent-ts=1707185570996 :tmi.twitch.tv CLEARMSG #goldenvcr :wasabi test 2",
+				Extra: map[string]string{
+					"login":         "wasabimilkshake",
+					"room-id":       "953753877",
+					"target-msg-id": "4e569024-f783-4218-9fe2-531d8c4d3556",
+					"tmi-sent-ts":   "1707185570996",
+				},
+				Prefix: "tmi.twitch.tv",
+				Type:   "CLEARMSG",
+				Params: []string{
+					"#goldenvcr",
+				},
+				Body: "wasabi test 2",
+			},
+		},
+		{
+			"CLEARCHAT with target user",
+			"@room-id=953753877;target-user-id=90790024;tmi-sent-ts=1707185640947 :tmi.twitch.tv CLEARCHAT #goldenvcr :wasabimilkshake\r",
+			"",
+			&Message{
+				Raw: "@room-id=953753877;target-user-id=90790024;tmi-sent-ts=1707185640947 :tmi.twitch.tv CLEARCHAT #goldenvcr :wasabimilkshake",
+				Extra: map[string]string{
+					"room-id":        "953753877",
+					"target-user-id": "90790024",
+					"tmi-sent-ts":    "1707185640947",
+				},
+				Prefix: "tmi.twitch.tv",
+				Type:   "CLEARCHAT",
+				Params: []string{
+					"#goldenvcr",
+				},
+				Body: "wasabimilkshake",
+			},
+		},
+		{
+			"CLEARCHAT for entire log",
+			"@room-id=953753877;tmi-sent-ts=1707185704103 :tmi.twitch.tv CLEARCHAT #goldenvcr\r",
+			"",
+			&Message{
+				Raw: "@room-id=953753877;tmi-sent-ts=1707185704103 :tmi.twitch.tv CLEARCHAT #goldenvcr",
+				Extra: map[string]string{
+					"room-id":     "953753877",
+					"tmi-sent-ts": "1707185704103",
+				},
+				Prefix: "tmi.twitch.tv",
+				Type:   "CLEARCHAT",
+				Params: []string{
+					"#goldenvcr",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
