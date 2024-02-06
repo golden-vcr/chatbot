@@ -21,6 +21,7 @@ func Test_Event(t *testing.T) {
 				Payload: &Payload{
 					Append: &PayloadAppend{
 						MessageId: "f5e05a31-57c8-4f34-bfd5-bc1ae222c279",
+						UserId:    "90790024",
 						Username:  "wasabimilkshake",
 						Color:     "#00ff7f",
 						Text:      "Hello world",
@@ -28,7 +29,7 @@ func Test_Event(t *testing.T) {
 					},
 				},
 			},
-			`{"type":"append","payload":{"messageId":"f5e05a31-57c8-4f34-bfd5-bc1ae222c279","username":"wasabimilkshake","color":"#00ff7f","text":"Hello world","emotes":[]}}`,
+			`{"type":"append","payload":{"messageId":"f5e05a31-57c8-4f34-bfd5-bc1ae222c279","userId":"90790024","username":"wasabimilkshake","color":"#00ff7f","text":"Hello world","emotes":[]}}`,
 		},
 		{
 			"append message with emotes",
@@ -37,6 +38,7 @@ func Test_Event(t *testing.T) {
 				Payload: &Payload{
 					Append: &PayloadAppend{
 						MessageId: "f5e05a31-57c8-4f34-bfd5-bc1ae222c279",
+						UserId:    "90790024",
 						Username:  "wasabimilkshake",
 						Color:     "#00ff7f",
 						Text:      "I have $$52 $0 $0 $1",
@@ -53,7 +55,7 @@ func Test_Event(t *testing.T) {
 					},
 				},
 			},
-			`{"type":"append","payload":{"messageId":"f5e05a31-57c8-4f34-bfd5-bc1ae222c279","username":"wasabimilkshake","color":"#00ff7f","text":"I have $$52 $0 $0 $1","emotes":[{"name":"someEmote","url":"https://my-cool-emotes.biz/some-emote.png"},{"name":"anotherEmote","url":"https://my-cool-emotes.biz/another-emote.gif"}]}}`,
+			`{"type":"append","payload":{"messageId":"f5e05a31-57c8-4f34-bfd5-bc1ae222c279","userId":"90790024","username":"wasabimilkshake","color":"#00ff7f","text":"I have $$52 $0 $0 $1","emotes":[{"name":"someEmote","url":"https://my-cool-emotes.biz/some-emote.png"},{"name":"anotherEmote","url":"https://my-cool-emotes.biz/another-emote.gif"}]}}`,
 		},
 		{
 			"delete a single message",
@@ -61,11 +63,23 @@ func Test_Event(t *testing.T) {
 				Type: EventTypeDelete,
 				Payload: &Payload{
 					Delete: &PayloadDelete{
-						MessageIds: []string{"f5e05a31-57c8-4f34-bfd5-bc1ae222c279"},
+						MessageId: "f5e05a31-57c8-4f34-bfd5-bc1ae222c279",
 					},
 				},
 			},
-			`{"type":"delete","payload":{"messageIds":["f5e05a31-57c8-4f34-bfd5-bc1ae222c279"]}}`,
+			`{"type":"delete","payload":{"messageId":"f5e05a31-57c8-4f34-bfd5-bc1ae222c279"}}`,
+		},
+		{
+			"delete all messages from a target user",
+			Event{
+				Type: EventTypeBan,
+				Payload: &Payload{
+					Ban: &PayloadBan{
+						UserId: "90790024",
+					},
+				},
+			},
+			`{"type":"ban","payload":{"userId":"90790024"}}`,
 		},
 		{
 			"clear the entire log",

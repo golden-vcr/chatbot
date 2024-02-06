@@ -7,6 +7,7 @@ type EventType string
 const (
 	EventTypeAppend EventType = "append"
 	EventTypeDelete EventType = "delete"
+	EventTypeBan    EventType = "ban"
 	EventTypeClear  EventType = "clear"
 )
 
@@ -18,6 +19,7 @@ type Event struct {
 type Payload struct {
 	Append *PayloadAppend
 	Delete *PayloadDelete
+	Ban    *PayloadBan
 }
 
 func (e *Event) UnmarshalJSON(data []byte) error {
@@ -38,6 +40,9 @@ func (e *Event) UnmarshalJSON(data []byte) error {
 	case EventTypeDelete:
 		e.Payload = &Payload{}
 		return json.Unmarshal(f.Payload, &e.Payload.Delete)
+	case EventTypeBan:
+		e.Payload = &Payload{}
+		return json.Unmarshal(f.Payload, &e.Payload.Ban)
 	}
 	return nil
 }
@@ -49,11 +54,15 @@ func (p Payload) MarshalJSON() ([]byte, error) {
 	if p.Delete != nil {
 		return json.Marshal(p.Delete)
 	}
+	if p.Ban != nil {
+		return json.Marshal(p.Ban)
+	}
 	return json.Marshal(nil)
 }
 
 type PayloadAppend struct {
 	MessageId string         `json:"messageId"`
+	UserId    string         `json:"userId"`
 	Username  string         `json:"username"`
 	Color     string         `json:"color"`
 	Text      string         `json:"text"`
@@ -66,5 +75,9 @@ type EmoteDetails struct {
 }
 
 type PayloadDelete struct {
-	MessageIds []string `json:"messageIds"`
+	MessageId string `json:"messageId"`
+}
+
+type PayloadBan struct {
+	UserId string `json:"userId"`
 }
