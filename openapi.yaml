@@ -127,6 +127,7 @@ paths:
                     type: append
                     payload:
                       messageId: 4cbc3d2a-4606-43d0-a9f3-2788fe50d352
+                      userId: '90790024'
                       username: wasabimilkshake
                       color: '#00FF7F'
                       text: 'hello, I have $$5 and this is an emote: $0'
@@ -134,12 +135,17 @@ paths:
                         - name: wasabi22Denton
                           url: https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_9d94d65bbef64763b7c09401156ea0bc/default/dark/1.0
                 delete:
-                  summary: One or more recent messages should be deleted
+                  summary: A speciifc message should be deleted
                   value:
                     type: delete
                     payload:
-                      messageIds:
-                        - 4cbc3d2a-4606-43d0-a9f3-2788fe50d352
+                      messageId: 4cbc3d2a-4606-43d0-a9f3-2788fe50d352
+                ban:
+                  summary: All of a user's messages should be deleted
+                  value:
+                    type: ban
+                    payload:
+                      userId: '90790024'
                 clear:
                   summary: The entire chat log should be cleared
                   value:
