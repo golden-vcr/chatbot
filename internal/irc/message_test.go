@@ -189,6 +189,39 @@ func Test_parseMessage(t *testing.T) {
 				Body: "Hello world PogChamp",
 			},
 		},
+		{
+			"PRIVMSG with cheer",
+			"@badge-info=subscriber/2;badges=moderator/1,subscriber/0,bits/100;bits=200;color=#D2691E;display-name=TheBellaBunny;emotes=;first-msg=0;flags=;id=8be9e88b-4bdc-4deb-916b-2d40a4299e3f;mod=1;returning-chatter=0;room-id=953753877;subscriber=1;tmi-sent-ts=1707152232192;turbo=0;user-id=230460108;user-type=mod :thebellabunny!thebellabunny@thebellabunny.tmi.twitch.tv PRIVMSG #goldenvcr :Cheer100 Cheer100 ghost of a tiny man wearing a large bowler hat drinking from a penguin shaped glass\r",
+			"",
+			&Message{
+				Raw: "@badge-info=subscriber/2;badges=moderator/1,subscriber/0,bits/100;bits=200;color=#D2691E;display-name=TheBellaBunny;emotes=;first-msg=0;flags=;id=8be9e88b-4bdc-4deb-916b-2d40a4299e3f;mod=1;returning-chatter=0;room-id=953753877;subscriber=1;tmi-sent-ts=1707152232192;turbo=0;user-id=230460108;user-type=mod :thebellabunny!thebellabunny@thebellabunny.tmi.twitch.tv PRIVMSG #goldenvcr :Cheer100 Cheer100 ghost of a tiny man wearing a large bowler hat drinking from a penguin shaped glass",
+				Extra: map[string]string{
+					"badge-info":        "subscriber/2",
+					"badges":            "moderator/1,subscriber/0,bits/100",
+					"bits":              "200",
+					"color":             "#D2691E",
+					"display-name":      "TheBellaBunny",
+					"emotes":            "",
+					"first-msg":         "0",
+					"flags":             "",
+					"id":                "8be9e88b-4bdc-4deb-916b-2d40a4299e3f",
+					"mod":               "1",
+					"returning-chatter": "0",
+					"room-id":           "953753877",
+					"subscriber":        "1",
+					"tmi-sent-ts":       "1707152232192",
+					"turbo":             "0",
+					"user-id":           "230460108",
+					"user-type":         "mod",
+				},
+				Prefix: "thebellabunny!thebellabunny@thebellabunny.tmi.twitch.tv",
+				Type:   "PRIVMSG",
+				Params: []string{
+					"#goldenvcr",
+				},
+				Body: "Cheer100 Cheer100 ghost of a tiny man wearing a large bowler hat drinking from a penguin shaped glass",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
