@@ -11,9 +11,12 @@ import (
 )
 
 type Server struct {
+	mb *messageBuffer
 }
 
 func NewServer(ctx context.Context, logger *slog.Logger, messagesChan <-chan *irc.Message) *Server {
+	mb := newMessageBuffer(128)
+
 	go func() {
 		for message := range messagesChan {
 			ev, err := EventFromMessage(message)
@@ -26,11 +29,23 @@ func NewServer(ctx context.Context, logger *slog.Logger, messagesChan <-chan *ir
 				}
 			} else {
 				logger.Info("Propagating chatlog event", "chatlogEvent", ev)
+				switch ev.Type {
+				case EventTypeAppend:
+					mb.append(ev.Payload.Append)
+				case EventTypeDelete:
+					mb.delete(ev.Payload.Delete.MessageId)
+				case EventTypeBan:
+					mb.ban(ev.Payload.Ban.UserId)
+				case EventTypeClear:
+					mb.clear()
+				}
 			}
 		}
 	}()
 
-	return &Server{}
+	return &Server{
+		mb: mb,
+	}
 }
 
 func (s *Server) RegisterRoutes(r *mux.Router) {

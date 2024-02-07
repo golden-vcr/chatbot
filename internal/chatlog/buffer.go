@@ -128,3 +128,12 @@ func (b *messageBuffer) delete(messageId string) {
 		return message.MessageId != messageId
 	})
 }
+
+// clear removes all messages from the buffer and resets it
+func (b *messageBuffer) clear() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	b.headIndex = 0
+	b.size = 0
+}

@@ -90,4 +90,8 @@ func Test_MessageBuffer(t *testing.T) {
 		{MessageId: "7", UserId: "dnitra", Text: "hello from dnitra"},
 		{MessageId: "9", UserId: "dnitra", Text: "hello for the last time from dnitra"},
 	})
+
+	b.clear()
+
+	assert.Equal(t, b.take(4), []*PayloadAppend{})
 }
