@@ -62,10 +62,10 @@ func NewConn(ctx context.Context, opts ConnOpts) (Conn, error) {
 	// Initialize an irc.Conn that will allow us to read from and write to our
 	// connection in the form of plain-text IRC messages
 	c := &conn{
-		Conn:         tcpConn,
-		reader:       bufio.NewReader(tcpConn),
-		logger:       opts.Logger,
-		messagesChan: make(chan string),
+		Conn:              tcpConn,
+		reader:            bufio.NewReader(tcpConn),
+		logger:            opts.Logger,
+		receivedLinesChan: make(chan string),
 	}
 
 	// Run a goroutine that will await new messages from the server for as long as our
@@ -88,7 +88,7 @@ func NewConn(ctx context.Context, opts ConnOpts) (Conn, error) {
 			// its raw text to our channel
 			line := strings.TrimSuffix(s, "\n")
 			c.logger.LogRecv(line)
-			c.messagesChan <- line
+			c.receivedLinesChan <- line
 		}
 	}()
 
@@ -104,9 +104,9 @@ func NewConn(ctx context.Context, opts ConnOpts) (Conn, error) {
 
 type conn struct {
 	net.Conn
-	reader       *bufio.Reader
-	logger       Logger
-	messagesChan chan string
+	reader            *bufio.Reader
+	logger            Logger
+	receivedLinesChan chan string
 
 	closed bool
 	mu     sync.RWMutex
@@ -121,7 +121,7 @@ func (c *conn) close() {
 		if err != nil && !errors.Is(err, net.ErrClosed) {
 			c.logger.LogError(fmt.Errorf("error closing connection to IRC server: %w", err))
 		}
-		close(c.messagesChan)
+		close(c.receivedLinesChan)
 		c.closed = true
 	}
 }
@@ -137,7 +137,7 @@ func (c *conn) Recv() (<-chan string, error) {
 	if c.closed {
 		return nil, fmt.Errorf("IRC client connection already closed")
 	}
-	return c.messagesChan, nil
+	return c.receivedLinesChan, nil
 }
 
 func (c *conn) Send(s string) error {
