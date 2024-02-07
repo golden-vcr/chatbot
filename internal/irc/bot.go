@@ -15,7 +15,7 @@ type Bot interface {
 	GetLastPingTime() time.Time
 }
 
-func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string) (Bot, error) {
+func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message) (Bot, error) {
 	lines, err := conn.Recv()
 	if err != nil {
 		return nil, err
@@ -29,10 +29,12 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 	}
 	go func() {
 		for s := range lines {
-			if err := b.handle(s); err != nil {
+			message, err := b.handle(s)
+			if err != nil {
 				b.fail(err)
 				return
 			}
+			messagesChan <- message
 		}
 	}()
 
@@ -71,11 +73,11 @@ func (b *bot) init() error {
 	return nil
 }
 
-func (b *bot) handle(s string) error {
+func (b *bot) handle(s string) (*Message, error) {
 	// Parse the incoming IRC message from plain-text
 	m, err := parseMessage(s)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// If we're still in the init stage, we need to send a JOIN message, but only once
@@ -87,18 +89,18 @@ func (b *bot) handle(s string) error {
 	case "PING":
 		pong := strings.Replace(m.Raw, "PING ", "PONG ", 1)
 		if err := b.conn.Send(pong); err != nil {
-			return err
+			return m, err
 		}
 		b.lastPingTime = time.Now()
-		return nil
+		return m, nil
 
 	// If we get a NOTICE telling us our login failed, abort
 	case "NOTICE":
 		if m.Body == "Login authentication failed" {
-			return fmt.Errorf("Login authentication failed")
+			return m, fmt.Errorf("Login authentication failed")
 		}
 		// All other NOTICE message should be ignored
-		return nil
+		return m, nil
 
 	// If we get a CAP * ACK matching the capabilities we requested, note it, and send a
 	// JOIN message as soon as we have both CAP ACK and GLOBALUSERSTATE
@@ -106,20 +108,20 @@ func (b *bot) handle(s string) error {
 		if !b.gotCapAck && includes(m.Params, "ACK") && m.Body == "twitch.tv/commands twitch.tv/tags" {
 			b.gotCapAck = true
 			if !hasSentJoin && b.gotGlobalUserState {
-				return b.sendJoin()
+				return m, b.sendJoin()
 			}
 		}
-		return nil
+		return m, nil
 
 	// If we get a GLOBALUSERSTATE after a CAP * ACK, we're ready to join the channel
 	case "GLOBALUSERSTATE":
 		if !b.gotGlobalUserState {
 			b.gotGlobalUserState = true
 			if !hasSentJoin && b.gotCapAck {
-				return b.sendJoin()
+				return m, b.sendJoin()
 			}
 		}
-		return nil
+		return m, nil
 
 	// If we're receiving a ROOMSTATE message for the channel we wanted to join, we've
 	// successfully joined that channel
@@ -127,11 +129,11 @@ func (b *bot) handle(s string) error {
 		if includes(m.Params, b.channel) {
 			b.gotRoomState = true
 		}
-		return nil
+		return m, nil
 	}
 
 	// All message types not explicitly handled are considered OK
-	return nil
+	return m, nil
 }
 
 func (b *bot) sendJoin() error {

@@ -18,20 +18,22 @@ type Agent interface {
 	GetStatus() chatbot.Status
 }
 
-func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string) Agent {
+func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string, messagesChan chan<- *irc.Message) Agent {
 	return &agent{
-		rootCtx:     ctx,
-		logger:      logger,
-		channelName: channelName,
-		botUsername: botUsername,
+		rootCtx:      ctx,
+		logger:       logger,
+		channelName:  channelName,
+		botUsername:  botUsername,
+		messagesChan: messagesChan,
 	}
 }
 
 type agent struct {
-	rootCtx     context.Context
-	logger      *slog.Logger
-	channelName string
-	botUsername string
+	rootCtx      context.Context
+	logger       *slog.Logger
+	channelName  string
+	botUsername  string
+	messagesChan chan<- *irc.Message
 
 	conn irc.Conn
 	bot  irc.Bot
@@ -58,7 +60,7 @@ func (a *agent) Reinitialize(userAccessToken string, timeout time.Duration) erro
 	if err != nil {
 		return err
 	}
-	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken)
+	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken, a.messagesChan)
 	if err != nil {
 		conn.Close()
 		return err
