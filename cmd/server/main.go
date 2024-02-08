@@ -62,7 +62,7 @@ func main() {
 	// the channel, and it serves that stream of messages to clients for rendering
 	{
 		chatlogServer := chatlog.NewServer(ctx, app.Log(), messagesChan)
-		chatlogServer.RegisterRoutes(r)
+		chatlogServer.RegisterRoutes(ctx, r)
 	}
 
 	// Initialize an "agent", which is essentially a wrapper for the IRC bot that

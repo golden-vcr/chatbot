@@ -3,19 +3,22 @@ package chatlog
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	"github.com/golden-vcr/chatbot/internal/irc"
+	"github.com/golden-vcr/server-common/sse"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"golang.org/x/exp/slog"
 )
 
 type Server struct {
-	mb *messageBuffer
+	mb         *eventBuffer
+	eventsChan chan *Event
 }
 
 func NewServer(ctx context.Context, logger *slog.Logger, messagesChan <-chan *irc.Message) *Server {
-	mb := newMessageBuffer(128)
+	mb := newEventBuffer(128)
+	eventsChan := make(chan *Event, 32)
 
 	go func() {
 		for message := range messagesChan {
@@ -28,30 +31,49 @@ func NewServer(ctx context.Context, logger *slog.Logger, messagesChan <-chan *ir
 					)
 				}
 			} else {
+				ev.eventStreamId = uuid.NewString()
 				logger.Info("Propagating chatlog event", "chatlogEvent", ev)
-				switch ev.Type {
-				case EventTypeAppend:
-					mb.append(ev.Payload.Append)
-				case EventTypeDelete:
-					mb.delete(ev.Payload.Delete.MessageId)
-				case EventTypeBan:
-					mb.ban(ev.Payload.Ban.UserId)
-				case EventTypeClear:
-					mb.clear()
-				}
+				mb.push(ev)
+				eventsChan <- ev
 			}
 		}
 	}()
 
 	return &Server{
-		mb: mb,
+		mb:         mb,
+		eventsChan: eventsChan,
 	}
 }
 
-func (s *Server) RegisterRoutes(r *mux.Router) {
-	r.Path("/chatlog").Methods("GET").HandlerFunc(s.handleGetChatlog)
-}
+func (s *Server) RegisterRoutes(ctx context.Context, r *mux.Router) {
+	h := sse.NewHandler[*Event](ctx, s.eventsChan)
+	h.ResolveEventId = func(ev *Event) string {
+		return ev.eventStreamId
+	}
+	h.OnConnect = func(lastEventId string) []*Event {
+		// If no Last-Event-ID is specified, just send an initial burst of the N most
+		// recent events, up to a reasonable limit
+		if lastEventId == "" {
+			return s.mb.take(64)
+		}
 
-func (s *Server) handleGetChatlog(res http.ResponseWriter, req *http.Request) {
-	http.Error(res, "NYI", http.StatusInternalServerError)
+		// Otherwise, take all events from the buffer so we can scan for event ID
+		events := s.mb.take(s.mb.size)
+
+		// Find the index where our last-received event appears
+		lastEventIndex := -1
+		for i := 0; i < len(events); i++ {
+			if events[i].eventStreamId == lastEventId {
+				lastEventIndex = i
+				break
+			}
+		}
+
+		// If we recognize the last event, catch the client up by sending all events
+		// that have been buffered since; otherwise send all known events, since the
+		// last event must be so old that we don't remember it
+		return events[lastEventIndex+1:]
+	}
+
+	r.Path("/chatlog").Methods("GET").Handler(h)
 }

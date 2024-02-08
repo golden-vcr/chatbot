@@ -14,6 +14,8 @@ const (
 type Event struct {
 	Type    EventType `json:"type"`
 	Payload *Payload  `json:"payload,omitempty"`
+
+	eventStreamId string
 }
 
 type Payload struct {
