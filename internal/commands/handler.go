@@ -32,8 +32,12 @@ type handler struct {
 
 func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	switch command {
-	case "speak":
-		return h.say("woof woof")
+	case "ghosts":
+		return h.say("To submit ghost alerts, either: 1.) cheer 200 bits with a message containing \"ghost of <thing you want to see>\", or 2.) log in to goldenvcr.com and use the form on the front page to spend your Golden VCR Fun Points.")
+	case "tapes":
+		return h.say("Browse tapes at https://goldenvcr.com/tapes - you can log in with Twitch and mark tapes you want to see as favorites.")
+	case "youtube":
+		return h.say("Watch VODs and clips on YouTube: https://www.youtube.com/@GoldenVCR/videos")
 	case "balance":
 		accessToken, err := h.authServiceClient.RequestServiceToken(h.ctx, auth.ServiceTokenRequest{
 			Service: "chatbot",
