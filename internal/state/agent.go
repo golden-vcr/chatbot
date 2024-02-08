@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/irc"
 	"golang.org/x/exp/slog"
@@ -18,24 +19,26 @@ type Agent interface {
 	GetStatus() chatbot.Status
 }
 
-func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string, messagesChan chan<- *irc.Message, emitBotMessage func(string)) Agent {
+func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string, messagesChan chan<- *irc.Message, emitBotMessage func(string), authServiceClient auth.ServiceClient) Agent {
 	return &agent{
-		rootCtx:        ctx,
-		logger:         logger,
-		channelName:    channelName,
-		botUsername:    botUsername,
-		messagesChan:   messagesChan,
-		emitBotMessage: emitBotMessage,
+		rootCtx:           ctx,
+		logger:            logger,
+		channelName:       channelName,
+		botUsername:       botUsername,
+		messagesChan:      messagesChan,
+		emitBotMessage:    emitBotMessage,
+		authServiceClient: authServiceClient,
 	}
 }
 
 type agent struct {
-	rootCtx        context.Context
-	logger         *slog.Logger
-	channelName    string
-	botUsername    string
-	messagesChan   chan<- *irc.Message
-	emitBotMessage func(string)
+	rootCtx           context.Context
+	logger            *slog.Logger
+	channelName       string
+	botUsername       string
+	messagesChan      chan<- *irc.Message
+	emitBotMessage    func(string)
+	authServiceClient auth.ServiceClient
 
 	conn irc.Conn
 	bot  irc.Bot
@@ -62,7 +65,7 @@ func (a *agent) Reinitialize(userAccessToken string, timeout time.Duration) erro
 	if err != nil {
 		return err
 	}
-	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken, a.messagesChan, a.emitBotMessage)
+	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken, a.messagesChan, a.emitBotMessage, a.authServiceClient)
 	if err != nil {
 		conn.Close()
 		return err

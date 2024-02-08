@@ -27,7 +27,8 @@ type Config struct {
 
 	TokenStoragePath string `env:"TOKEN_STORAGE_PATH" default:"twitch-tokens"`
 
-	AuthURL string `env:"AUTH_URL" default:"http://localhost:5002"`
+	AuthURL          string `env:"AUTH_URL" default:"http://localhost:5002"`
+	AuthSharedSecret string `env:"AUTH_SHARED_SECRET" required:"true"`
 }
 
 func main() {
@@ -43,6 +44,11 @@ func main() {
 	if err := env.Set(&config); err != nil {
 		app.Fail("Failed to load config", err)
 	}
+
+	// We need an auth service client so that when a user sends a command that requires
+	// accessing their backend state (e.g. '!balance'), we can request a JWT that will
+	// authorize those requests
+	authServiceClient := auth.NewServiceClient(config.AuthURL, config.AuthSharedSecret)
 
 	// We need an auth client in order to authorize HTTP requests that require
 	// admin-level access
@@ -67,7 +73,7 @@ func main() {
 	// maintains exactly one connection at a time, and which can respond to successful
 	// logins by tearing down any existing connection and then initializing a new one
 	// and reconnecting the bot
-	agent := state.NewAgent(ctx, app.Log(), config.TwitchChannelName, config.TwitchBotUsername, messagesChan, chatlogServer.EmitBotMessage)
+	agent := state.NewAgent(ctx, app.Log(), config.TwitchChannelName, config.TwitchBotUsername, messagesChan, chatlogServer.EmitBotMessage, authServiceClient)
 
 	// The connection server exposes HTTP endpoints related to login and connection
 	// management: we can use GET /status to see whether the chat bot is successfully

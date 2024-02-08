@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/commands"
 )
@@ -16,7 +17,7 @@ type Bot interface {
 	GetLastPingTime() time.Time
 }
 
-func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message, emitBotMessage func(string)) (Bot, error) {
+func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message, emitBotMessage func(string), authServiceClient auth.ServiceClient) (Bot, error) {
 	lines, err := conn.Recv()
 	if err != nil {
 		return nil, err
@@ -27,7 +28,7 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 		channel:     fmt.Sprintf("#%s", channelName),
 		nick:        strings.ToLower(username),
 		accessToken: userAccessToken,
-		commandHandler: commands.NewHandler(ctx, func(s string) error {
+		commandHandler: commands.NewHandler(ctx, authServiceClient, func(s string) error {
 			if err := conn.Sendf("PRIVMSG #%s :%s", channelName, s); err != nil {
 				return err
 			}
@@ -149,11 +150,16 @@ func (b *bot) handle(s string) (*Message, error) {
 				command = m.Body[1:spacePos]
 				args = m.Body[spacePos+1:]
 			}
-			go func() {
-				if err := b.commandHandler.Handle(command, args); err != nil {
-					b.conn.Sendf("PRIVMSG %s :%s", b.channel, err)
-				}
-			}()
+
+			userId := m.Extra["user-id"]
+			displayName := m.Extra["display-name"]
+			if userId != "" && displayName != "" {
+				go func() {
+					if err := b.commandHandler.Handle(command, args, userId, displayName); err != nil {
+						b.conn.Sendf("PRIVMSG %s :%s", b.channel, err)
+					}
+				}()
+			}
 		}
 	}
 
