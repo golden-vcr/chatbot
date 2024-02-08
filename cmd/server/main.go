@@ -60,16 +60,14 @@ func main() {
 
 	// The chatlog server buffers a subset of messages that have appeared recently in
 	// the channel, and it serves that stream of messages to clients for rendering
-	{
-		chatlogServer := chatlog.NewServer(ctx, app.Log(), messagesChan)
-		chatlogServer.RegisterRoutes(ctx, r)
-	}
+	chatlogServer := chatlog.NewServer(ctx, app.Log(), messagesChan)
+	chatlogServer.RegisterRoutes(ctx, r)
 
 	// Initialize an "agent", which is essentially a wrapper for the IRC bot that
 	// maintains exactly one connection at a time, and which can respond to successful
 	// logins by tearing down any existing connection and then initializing a new one
 	// and reconnecting the bot
-	agent := state.NewAgent(ctx, app.Log(), config.TwitchChannelName, config.TwitchBotUsername, messagesChan)
+	agent := state.NewAgent(ctx, app.Log(), config.TwitchChannelName, config.TwitchBotUsername, messagesChan, chatlogServer.EmitBotMessage)
 
 	// The connection server exposes HTTP endpoints related to login and connection
 	// management: we can use GET /status to see whether the chat bot is successfully

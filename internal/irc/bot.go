@@ -16,7 +16,7 @@ type Bot interface {
 	GetLastPingTime() time.Time
 }
 
-func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message) (Bot, error) {
+func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message, emitBotMessage func(string)) (Bot, error) {
 	lines, err := conn.Recv()
 	if err != nil {
 		return nil, err
@@ -28,7 +28,11 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 		nick:        strings.ToLower(username),
 		accessToken: userAccessToken,
 		commandHandler: commands.NewHandler(ctx, func(s string) error {
-			return conn.Sendf("PRIVMSG #%s :%s", channelName, s)
+			if err := conn.Sendf("PRIVMSG #%s :%s", channelName, s); err != nil {
+				return err
+			}
+			emitBotMessage(s)
+			return nil
 		}),
 	}
 	go func() {

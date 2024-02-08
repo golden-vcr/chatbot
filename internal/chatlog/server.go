@@ -77,3 +77,22 @@ func (s *Server) RegisterRoutes(ctx context.Context, r *mux.Router) {
 
 	r.Path("/chatlog").Methods("GET").Handler(h)
 }
+
+func (s *Server) EmitBotMessage(text string) {
+	ev := &Event{
+		Type: EventTypeAppend,
+		Payload: &Payload{
+			Append: &PayloadAppend{
+				MessageId: uuid.NewString(),
+				UserId:    "_BOT_",
+				Username:  "_BOT_",
+				Color:     "#FFFFFF",
+				Text:      text,
+				Emotes:    []EmoteDetails{},
+			},
+		},
+		eventStreamId: uuid.NewString(),
+	}
+	s.mb.push(ev)
+	s.eventsChan <- ev
+}
