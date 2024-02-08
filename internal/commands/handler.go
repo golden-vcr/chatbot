@@ -2,10 +2,7 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
 
 	"github.com/golden-vcr/auth"
 )
@@ -33,44 +30,13 @@ type handler struct {
 func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	switch command {
 	case "ghosts":
-		return h.say("To submit ghost alerts, either: 1.) cheer 200 bits with a message containing \"ghost of <thing you want to see>\", or 2.) log in to goldenvcr.com and use the form on the front page to spend your Golden VCR Fun Points.")
+		return h.handleGhosts()
 	case "tapes":
-		return h.say("Browse tapes at https://goldenvcr.com/tapes - you can log in with Twitch and mark tapes you want to see as favorites.")
+		return h.handleTapes()
 	case "youtube":
-		return h.say("Watch VODs and clips on YouTube: https://www.youtube.com/@GoldenVCR/videos")
+		return h.handleYoutube()
 	case "balance":
-		accessToken, err := h.authServiceClient.RequestServiceToken(h.ctx, auth.ServiceTokenRequest{
-			Service: "chatbot",
-			User: auth.UserDetails{
-				Id:          userId,
-				Login:       strings.ToLower(userDisplayName),
-				DisplayName: userDisplayName,
-			},
-		})
-		if err != nil {
-			return err
-		}
-		url := "https://goldenvcr.com/api/ledger/balance"
-		req, err := http.NewRequest(http.MethodGet, url, nil)
-		if err != nil {
-			return err
-		}
-		req.Header.Set("authorization", fmt.Sprintf("Bearer %s", accessToken))
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return err
-		}
-		if res.StatusCode != http.StatusOK {
-			return fmt.Errorf("got response %d from ledger balance request", res.StatusCode)
-		}
-		type fields struct {
-			AvailablePoints int `json:"availablePoints"`
-		}
-		var f fields
-		if err := json.NewDecoder(res.Body).Decode(&f); err != nil {
-			return err
-		}
-		return h.say(fmt.Sprintf("@%s You have %d fun points available.", userDisplayName, f.AvailablePoints))
+		return h.handleBalance(userId, userDisplayName)
 	}
 	return fmt.Errorf("unrecognized command: %s", command)
 }
