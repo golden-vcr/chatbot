@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golden-vcr/chatbot"
+	"github.com/golden-vcr/chatbot/internal/commands"
 )
 
 type Bot interface {
@@ -26,6 +27,9 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 		channel:     fmt.Sprintf("#%s", channelName),
 		nick:        strings.ToLower(username),
 		accessToken: userAccessToken,
+		commandHandler: commands.NewHandler(ctx, func(s string) error {
+			return conn.Sendf("PRIVMSG #%s :%s", channelName, s)
+		}),
 	}
 	go func() {
 		for s := range lines {
@@ -46,10 +50,11 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 }
 
 type bot struct {
-	conn        Conn
-	channel     string
-	nick        string
-	accessToken string
+	conn           Conn
+	channel        string
+	nick           string
+	accessToken    string
+	commandHandler commands.Handler
 
 	err          error
 	lastPingTime time.Time
@@ -130,6 +135,22 @@ func (b *bot) handle(s string) (*Message, error) {
 			b.gotRoomState = true
 		}
 		return m, nil
+
+	// If we get a PRIVMSG prefixed with '!', attempt to parse it as a command
+	case "PRIVMSG":
+		if includes(m.Params, b.channel) && len(m.Body) > 1 && m.Body[0] == '!' {
+			command := m.Body[1:]
+			args := ""
+			if spacePos := strings.IndexRune(m.Body, ' '); spacePos >= 2 {
+				command = m.Body[1:spacePos]
+				args = m.Body[spacePos+1:]
+			}
+			go func() {
+				if err := b.commandHandler.Handle(command, args); err != nil {
+					b.conn.Sendf("PRIVMSG %s :%s", b.channel, err)
+				}
+			}()
+		}
 	}
 
 	// All message types not explicitly handled are considered OK
