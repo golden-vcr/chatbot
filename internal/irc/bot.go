@@ -2,6 +2,7 @@ package irc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -10,6 +11,8 @@ import (
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/commands"
 )
+
+var ErrReceivedReconnect = errors.New("received RECONNECT message from Twitch IRC server")
 
 type Bot interface {
 	GetStatus() chatbot.Status
@@ -35,6 +38,9 @@ func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessTok
 			emitBotMessage(s)
 			return nil
 		}),
+		signalError: func(err error) {
+			emitBotMessage(fmt.Sprintf("ERROR: %s", err))
+		},
 	}
 	go func() {
 		for s := range lines {
@@ -60,6 +66,7 @@ type bot struct {
 	nick           string
 	accessToken    string
 	commandHandler commands.Handler
+	signalError    func(err error)
 
 	err          error
 	lastPingTime time.Time
@@ -103,6 +110,11 @@ func (b *bot) handle(s string) (*Message, error) {
 		}
 		b.lastPingTime = time.Now()
 		return m, nil
+
+	// If we get a RECONNECT message, the connection is being closed server-side for
+	// maintenance reasons and we should attempt to reconnect
+	case "RECONNECT":
+		return m, ErrReceivedReconnect
 
 	// If we get a NOTICE telling us our login failed, abort
 	case "NOTICE":
@@ -172,6 +184,7 @@ func (b *bot) sendJoin() error {
 }
 
 func (b *bot) fail(err error) {
+	b.signalError(err)
 	b.err = err
 }
 
