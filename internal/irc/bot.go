@@ -10,6 +10,7 @@ import (
 	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/commands"
+	"github.com/golden-vcr/server-common/rmq"
 )
 
 var ErrReceivedReconnect = errors.New("received RECONNECT message from Twitch IRC server")
@@ -20,24 +21,26 @@ type Bot interface {
 	GetLastPingTime() time.Time
 }
 
-func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message, emitBotMessage func(string), authServiceClient auth.ServiceClient) (Bot, error) {
+func NewBot(ctx context.Context, conn Conn, channelName, username, userAccessToken string, messagesChan chan<- *Message, emitBotMessage func(string), authServiceClient auth.ServiceClient, twitchEventsProducer rmq.Producer) (Bot, error) {
 	lines, err := conn.Recv()
 	if err != nil {
 		return nil, err
 	}
 
+	say := func(s string) error {
+		if err := conn.Sendf("PRIVMSG #%s :%s", channelName, s); err != nil {
+			return err
+		}
+		emitBotMessage(s)
+		return nil
+	}
+
 	b := &bot{
-		conn:        conn,
-		channel:     fmt.Sprintf("#%s", channelName),
-		nick:        strings.ToLower(username),
-		accessToken: userAccessToken,
-		commandHandler: commands.NewHandler(ctx, authServiceClient, func(s string) error {
-			if err := conn.Sendf("PRIVMSG #%s :%s", channelName, s); err != nil {
-				return err
-			}
-			emitBotMessage(s)
-			return nil
-		}),
+		conn:           conn,
+		channel:        fmt.Sprintf("#%s", channelName),
+		nick:           strings.ToLower(username),
+		accessToken:    userAccessToken,
+		commandHandler: commands.NewHandler(ctx, authServiceClient, say, twitchEventsProducer),
 		signalError: func(err error) {
 			emitBotMessage(fmt.Sprintf("ERROR: %s", err))
 		},

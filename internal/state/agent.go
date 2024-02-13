@@ -10,6 +10,7 @@ import (
 	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/chatbot"
 	"github.com/golden-vcr/chatbot/internal/irc"
+	"github.com/golden-vcr/server-common/rmq"
 	"golang.org/x/exp/slog"
 )
 
@@ -19,26 +20,28 @@ type Agent interface {
 	GetStatus() chatbot.Status
 }
 
-func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string, messagesChan chan<- *irc.Message, emitBotMessage func(string), authServiceClient auth.ServiceClient) Agent {
+func NewAgent(ctx context.Context, logger *slog.Logger, channelName, botUsername string, messagesChan chan<- *irc.Message, emitBotMessage func(string), authServiceClient auth.ServiceClient, twitchEventsProducer rmq.Producer) Agent {
 	return &agent{
-		rootCtx:           ctx,
-		logger:            logger,
-		channelName:       channelName,
-		botUsername:       botUsername,
-		messagesChan:      messagesChan,
-		emitBotMessage:    emitBotMessage,
-		authServiceClient: authServiceClient,
+		rootCtx:              ctx,
+		logger:               logger,
+		channelName:          channelName,
+		botUsername:          botUsername,
+		messagesChan:         messagesChan,
+		emitBotMessage:       emitBotMessage,
+		authServiceClient:    authServiceClient,
+		twitchEventsProducer: twitchEventsProducer,
 	}
 }
 
 type agent struct {
-	rootCtx           context.Context
-	logger            *slog.Logger
-	channelName       string
-	botUsername       string
-	messagesChan      chan<- *irc.Message
-	emitBotMessage    func(string)
-	authServiceClient auth.ServiceClient
+	rootCtx              context.Context
+	logger               *slog.Logger
+	channelName          string
+	botUsername          string
+	messagesChan         chan<- *irc.Message
+	emitBotMessage       func(string)
+	authServiceClient    auth.ServiceClient
+	twitchEventsProducer rmq.Producer
 
 	conn irc.Conn
 	bot  irc.Bot
@@ -65,7 +68,7 @@ func (a *agent) Reinitialize(userAccessToken string, timeout time.Duration) erro
 	if err != nil {
 		return err
 	}
-	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken, a.messagesChan, a.emitBotMessage, a.authServiceClient)
+	b, err := irc.NewBot(a.rootCtx, conn, a.channelName, a.botUsername, userAccessToken, a.messagesChan, a.emitBotMessage, a.authServiceClient, a.twitchEventsProducer)
 	if err != nil {
 		conn.Close()
 		return err
