@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/golden-vcr/auth"
 	"github.com/golden-vcr/server-common/rmq"
@@ -45,6 +46,9 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 		return h.handleTape()
 	case "balance":
 		return h.handleBalance(userId, userDisplayName)
+	}
+	if (command == "ghost" || command == "ghosts") && strings.HasPrefix(args, "of") && len(args) > 3 {
+		return h.handleNumericCommand(200, fmt.Sprintf("ghost %s", args), userId, userDisplayName)
 	}
 	if numPoints, err := strconv.Atoi(command); err == nil && numPoints > 0 {
 		return h.handleNumericCommand(numPoints, args, userId, userDisplayName)
