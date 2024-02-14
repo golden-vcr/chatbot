@@ -39,6 +39,10 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 		return h.handleTapes()
 	case "youtube":
 		return h.handleYoutube()
+	case "uptime":
+		return h.handleUptime()
+	case "tape":
+		return h.handleTape()
 	case "balance":
 		return h.handleBalance(userId, userDisplayName)
 	}

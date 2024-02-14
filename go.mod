@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/codingconcepts/env v0.0.0-20200821220118-a8fbf8d84482
 	github.com/golden-vcr/auth v0.3.0
+	github.com/golden-vcr/broadcasts v0.1.0
 	github.com/golden-vcr/schemas v0.4.0
 	github.com/golden-vcr/server-common v0.9.0
 	github.com/google/uuid v1.6.0
