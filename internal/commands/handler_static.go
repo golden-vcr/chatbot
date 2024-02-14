@@ -11,3 +11,7 @@ func (h *handler) handleTapes() error {
 func (h *handler) handleYoutube() error {
 	return h.say("Watch VODs and clips on YouTube: https://www.youtube.com/@GoldenVCR/videos")
 }
+
+func (h *handler) handleCamera() error {
+	return h.say("A camera is a device for recording visual images in the form of photographs, film, or video signals.")
+}
