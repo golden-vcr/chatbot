@@ -117,6 +117,14 @@ func Test_substituteEmotes(t *testing.T) {
 			[]EmoteDetails{},
 		},
 		{
+			"literal dollar is still escaped in message with no emotes",
+			"I have $5 in my pocket",
+			[]emoteInfo{},
+			"",
+			"I have $$5 in my pocket",
+			[]EmoteDetails{},
+		},
+		{
 			"message with a single emote",
 			"looky here it's our boy abe presidAbe , howdy doody",
 			[]emoteInfo{

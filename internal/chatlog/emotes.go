@@ -78,7 +78,7 @@ func parseEmotes(emotes string) ([]emoteInfo, error) {
 func substituteEmotes(body string, emoteInfos []emoteInfo) (string, []EmoteDetails, error) {
 	// Early-out if the message contains no emotes
 	if len(emoteInfos) == 0 {
-		return body, []EmoteDetails{}, nil
+		return strings.ReplaceAll(body, "$", "$$"), []EmoteDetails{}, nil
 	}
 
 	// Resolve the name of each emote by identifying the corresponding span of text in
