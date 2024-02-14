@@ -86,7 +86,9 @@ func (h *handler) handleTape() error {
 		if f.Runtime > 0 {
 			desc += fmt.Sprintf("%dm", f.Runtime)
 		}
+		desc += ")"
 	}
 	minutesElapsed := max(0, int(time.Since(screening.StartedAt).Minutes()))
-	return h.say(fmt.Sprintf("The current tape is #%d: «%s»%s. It's been screened for %dm so far.", f.Id, f.Title, desc, minutesElapsed))
+	tapeUrl := fmt.Sprintf("https://goldenvcr.com/tapes/%d", screening.TapeId)
+	return h.say(fmt.Sprintf("The current tape is #%d: «%s»%s. It's been screened for %dm so far. %s", f.Id, f.Title, desc, minutesElapsed, tapeUrl))
 }
