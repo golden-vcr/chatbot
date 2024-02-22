@@ -52,6 +52,9 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	if strings.ToLower(command) == "prayerbear" {
 		return h.handleNumericCommand(200, "prayerbear", userId, userDisplayName)
 	}
+	if strings.ToLower(command) == "standback" {
+		return h.handleNumericCommand(300, "standback", userId, userDisplayName)
+	}
 	if command == "ghost" || command == "ghosts" {
 		message := command
 		if !strings.HasPrefix(args, "of ") {
