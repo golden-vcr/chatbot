@@ -49,9 +49,22 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	case "balance":
 		return h.handleBalance(userId, userDisplayName)
 	}
-	if (command == "ghost" || command == "ghosts") && strings.HasPrefix(args, "of") && len(args) > 3 {
-		return h.handleNumericCommand(200, fmt.Sprintf("ghost %s", args), userId, userDisplayName)
+	if command == "prayerbear" {
+		return h.handleNumericCommand(200, "", userId, userDisplayName)
 	}
+	if command == "ghost" || command == "ghosts" {
+		message := command
+		if !strings.HasPrefix(args, "of ") {
+			message += " of "
+		}
+		message += args
+		return h.handleNumericCommand(200, message, userId, userDisplayName)
+	}
+	if command == "friend" || command == "friends" {
+		message := fmt.Sprintf("%s %s", command, args)
+		return h.handleNumericCommand(200, message, userId, userDisplayName)
+	}
+
 	if numPoints, err := strconv.Atoi(command); err == nil && numPoints > 0 {
 		return h.handleNumericCommand(numPoints, args, userId, userDisplayName)
 	}
