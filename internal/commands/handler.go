@@ -49,8 +49,8 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	case "balance":
 		return h.handleBalance(userId, userDisplayName)
 	}
-	if command == "prayerbear" {
-		return h.handleNumericCommand(200, "", userId, userDisplayName)
+	if strings.ToLower(command) == "prayerbear" {
+		return h.handleNumericCommand(200, "prayerbear", userId, userDisplayName)
 	}
 	if command == "ghost" || command == "ghosts" {
 		message := command
