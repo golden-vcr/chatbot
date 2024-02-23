@@ -58,9 +58,9 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 		return h.handleNumericCommand(300, "standback", userId, userDisplayName)
 	}
 	if command == "ghost" || command == "ghosts" {
-		message := command
+		message := command + " "
 		if !strings.HasPrefix(args, "of ") {
-			message += " of "
+			message += "of "
 		}
 		message += args
 		return h.handleNumericCommand(200, message, userId, userDisplayName)
