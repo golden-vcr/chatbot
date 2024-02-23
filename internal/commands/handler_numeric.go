@@ -3,12 +3,15 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/golden-vcr/schemas/core"
 	etwitch "github.com/golden-vcr/schemas/twitch-events"
 )
 
 func (h *handler) handleNumericCommand(numPoints int, args, userId, userDisplayName string) error {
+	fmt.Printf("NUMERIC COMMAND: %d | %s\n", numPoints, args)
+
 	ev := etwitch.Event{
 		Type: etwitch.EventTypeViewerRedeemedFunPoints,
 		Viewer: &core.Viewer{
