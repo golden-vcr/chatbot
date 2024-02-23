@@ -36,6 +36,8 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	switch command {
 	case "ghosts":
 		return h.handleGhosts()
+	case "alerts":
+		return h.handleAlerts()
 	case "tapes":
 		return h.handleTapes()
 	case "youtube":

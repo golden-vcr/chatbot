@@ -1,7 +1,11 @@
 package commands
 
 func (h *handler) handleGhosts() error {
-	return h.say("To submit ghost alerts, cheer 200 bits and include 'ghost of <whatever>' in your message. To use your existing balance of Fun Points, prefix your message with '!200' instead of cheering.")
+	return h.say("To submit ghost alerts, cheer 200 bits and include 'ghost of <whatever>' in your message. To use 200 fun points from your balance, send '!ghost of <whatever>' as a normal message.")
+}
+
+func (h *handler) handleAlerts() error {
+	return h.say("You can cheer 200 bits and mention prayer bear, or you can cheer 300 bits and ask us to stand back. !prayerbear and !standback also work if you have the fun points to spend.")
 }
 
 func (h *handler) handleTapes() error {
