@@ -44,6 +44,8 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 		return h.handleYoutube()
 	case "camera":
 		return h.handleCamera()
+	case "bc":
+		return h.handleBc()
 	case "uptime":
 		return h.handleUptime()
 	case "tape":
