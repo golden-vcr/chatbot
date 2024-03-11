@@ -36,10 +36,14 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	switch command {
 	case "ghosts":
 		return h.handleGhosts()
+	case "friends":
+		return h.handleFriends()
 	case "alerts":
 		return h.handleAlerts()
 	case "tapes":
 		return h.handleTapes()
+	case "remix":
+		return h.handleRemix()
 	case "youtube":
 		return h.handleYoutube()
 	case "camera":
@@ -59,7 +63,7 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 	if strings.ToLower(command) == "standback" {
 		return h.handleNumericCommand(300, "standback", userId, userDisplayName)
 	}
-	if command == "ghost" || command == "ghosts" {
+	if command == "ghost" {
 		message := command + " "
 		if !strings.HasPrefix(args, "of ") {
 			message += "of "
@@ -67,7 +71,7 @@ func (h *handler) Handle(command, args, userId, userDisplayName string) error {
 		message += args
 		return h.handleNumericCommand(200, message, userId, userDisplayName)
 	}
-	if command == "friend" || command == "friends" {
+	if command == "friend" {
 		message := fmt.Sprintf("%s %s", command, args)
 		return h.handleNumericCommand(200, message, userId, userDisplayName)
 	}
