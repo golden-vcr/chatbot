@@ -84,6 +84,7 @@ func substituteEmotes(body string, emoteInfos []emoteInfo) (string, []EmoteDetai
 	// Resolve the name of each emote by identifying the corresponding span of text in
 	// the message body, and ensure that all instances of the same emote show the same
 	// name
+	bodyRunes := []rune(body)
 	emoteNames := make([]string, 0, len(emoteInfos))
 	for _, emoteInfo := range emoteInfos {
 		emoteName := ""
@@ -91,8 +92,9 @@ func substituteEmotes(body string, emoteInfos []emoteInfo) (string, []EmoteDetai
 			if span.start > span.end || span.start < 0 || span.start >= len(body) || span.end < 0 || span.end >= len(body) {
 				return "", nil, fmt.Errorf("invalid span bounds %d-%d", span.start, span.end)
 			}
-			spanText := body[span.start : span.end+1]
-			if strings.IndexRune(spanText, ' ') >= 0 {
+			spanRunes := bodyRunes[span.start : span.end+1]
+			spanText := string(spanRunes)
+			if strings.ContainsRune(spanText, ' ') {
 				return "", nil, fmt.Errorf("span '%s' contains space", spanText)
 			}
 			if i == 0 {

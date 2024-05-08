@@ -176,6 +176,26 @@ func Test_substituteEmotes(t *testing.T) {
 			},
 		},
 		{
+			"message with multi-byte characters",
+			"broadcast 69—Nice lullaSup",
+			[]emoteInfo{
+				{
+					id: "emotesv2_c697ab2d9be341c693b23aae6ed1e101",
+					spans: []emoteSpan{
+						{18, 25},
+					},
+				},
+			},
+			"",
+			"broadcast 69—Nice $0",
+			[]EmoteDetails{
+				{
+					Name: "lullaSup",
+					Url:  "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_c697ab2d9be341c693b23aae6ed1e101/default/dark/1.0",
+				},
+			},
+		},
+		{
 			"bad span ordering",
 			"Lincoln presidAbe presidAbe",
 			[]emoteInfo{
